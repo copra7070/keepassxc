@@ -1,5 +1,4 @@
-#  Copyright (C) 2017 Sami Vänttinen <sami.vanttinen@protonmail.com>
-#  Copyright (C) 2017 KeePassXC Team <team@keepassxc.org>
+#  Copyright (C) 2020 KeePassXC Team <team@keepassxc.org>
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -15,19 +14,14 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 if(WITH_XC_BROWSER)
-    include_directories(${BROWSER_SOURCE_DIR})
-
     set(proxy_SOURCES
         ../core/Alloc.cpp
+        ../browser/BrowserShared.cpp
         keepassxc-proxy.cpp
-        ${BROWSER_SOURCE_DIR}/NativeMessagingBase.cpp
-        NativeMessagingHost.cpp)
+        NativeMessagingProxy.cpp)
 
-    add_library(proxy STATIC ${proxy_SOURCES})
-    target_link_libraries(proxy Qt5::Core Qt5::Network ${sodium_LIBRARY_RELEASE})
-    add_executable(keepassxc-proxy keepassxc-proxy.cpp)
-    target_link_libraries(keepassxc-proxy proxy)
-
+    add_executable(keepassxc-proxy ${proxy_SOURCES})
+    target_link_libraries(keepassxc-proxy PRIVATE Qt5::Core Qt5::Network ${sodium_LIBRARY_RELEASE})
     install(TARGETS keepassxc-proxy
             BUNDLE DESTINATION . COMPONENT Runtime
             RUNTIME DESTINATION ${PROXY_INSTALL_DIR} COMPONENT Runtime)
@@ -38,14 +32,8 @@ if(WITH_XC_BROWSER)
                            COMMAND ${CMAKE_INSTALL_NAME_TOOL}
                                 -change ${Qt5_PREFIX}/lib/QtCore.framework/Versions/5/QtCore
                                     "@executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore"
-                                -change /usr/local/opt/qt/lib/QtCore.framework/Versions/5/QtCore
-                                    "@executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore"
                                 -change ${Qt5_PREFIX}/lib/QtNetwork.framework/Versions/5/QtNetwork
                                     "@executable_path/../Frameworks/QtNetwork.framework/Versions/5/QtNetwork"
-                                -change /usr/local/opt/qt/lib/QtNetwork.framework/Versions/5/QtNetwork
-                                    "@executable_path/../Frameworks/QtNetwork.framework/Versions/5/QtNetwork"
-                                -change /usr/local/opt/libsodium/lib/libsodium.23.dylib
-                                    "@executable_path/../Frameworks/libsodium.23.dylib"
                            keepassxc-proxy
                            COMMENT "Changing linking of keepassxc-proxy")
 
@@ -55,8 +43,5 @@ if(WITH_XC_BROWSER)
                            POST_BUILD
                            COMMAND ${CMAKE_COMMAND} -E copy keepassxc-proxy ${PROXY_APP_DIR}/keepassxc-proxy
                            COMMENT "Copying keepassxc-proxy inside the application")
-    endif()
-    if(MINGW)
-      target_link_libraries(keepassxc-proxy Wtsapi32.lib Ws2_32.lib)
     endif()
 endif()
